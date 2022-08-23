@@ -802,22 +802,35 @@ static int rms_disconnect(struct sip_msg *msg)
 //	return 0;
 //}
 
-static int rms_action_play_f(struct sip_msg *msg, str *playback_fn, str *route)
+static int rms_action_play_f(struct sip_msg *msg, str *_playback_fn, str *_route)
 {
+    str playback_fn = {NULL, 0};
+	str route = {NULL, 0};
 	rms_dialog_info_t *di = rms_dialog_search(msg);
 	if(!di) {
 		return -1;
 	}
 	LM_INFO("RTP session [%s:%d]<>[%s:%d]\n", di->media.local_ip.s,
 			di->media.local_port, di->media.remote_ip.s, di->media.remote_port);
+    
+    // parameter 1 : playback file name
+	if(get_str_fparam(&playback_fn, msg, (gparam_p)_playback_fn) != 0) {
+		LM_ERR("rms_play: can not read file param\n");
+		return -1;
+	}
+	// parameter 2 : route call-back
+	if(get_str_fparam(&route, msg, (gparam_p)_route) != 0) {
+		LM_ERR("rms_play: can not read route param\n");
+		return -1;
+	}
 
 	rms_action_t *a = rms_action_new(RMS_PLAY);
 	if(!a)
 		return -1;
-	a->param.len = playback_fn->len;
-	a->param.s = playback_fn->s;
-	a->route.len = route->len;
-	a->route.s = route->s;
+	a->param.len = playback_fn.len;
+	a->param.s = playback_fn.s;
+	a->route.len = route.len;
+	a->route.s = route.s;
 	rms_action_add(di, a);
 	return 0;
 }
